@@ -1,0 +1,9 @@
+﻿{
+  "name": "NoAggroNoStaminaCost",
+  "description": "Unlimited stamina when out of combat.",
+  "version_number": "0.1.0",
+  "website_url": "https://github.com/orax-Valheim-mods/NoAggroNoStaminaCost",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2333"
+  ]
+}
