@@ -20,9 +20,10 @@ internal class Patch
     }
 
     /// <summary>
-    /// Blocks all stamina consumption for the local player as long as no combat event has been
+    /// Blocks stamina consumption for the local player as long as no combat event has been
     /// recorded recently (see Player_RPC_OnTargeted_TrackAggro, Character_Damage_TrackCombat,
-    /// Player_OnDamaged_TrackCombat).
+    /// Player_OnDamaged_TrackCombat, and the nearby-combat scan), with one exception:
+    /// swimming always costs stamina, in or out of combat.
     /// </summary>
     [HarmonyPatch(typeof(Player), nameof(Player.UseStamina))]
     internal static class Player_UseStamina_NoDrainOutOfCombat
@@ -34,6 +35,10 @@ internal class Patch
 
             if (__instance != Player.m_localPlayer)
                 return true; // Never touch other players (multiplayer).
+
+            if (__instance.IsSwimming())
+                return true; // Swimming is never free: Player.OnSwimming -> UseStamina must pay
+                             // (running out of stamina while swimming is what drowns you).
 
             if (AggroState.IsRecent(NoAggroNoStaminaCost.CombatGracePeriod.Value))
             {

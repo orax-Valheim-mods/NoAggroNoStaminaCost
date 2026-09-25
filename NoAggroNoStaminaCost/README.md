@@ -7,8 +7,11 @@ character, or while a hostile character is hitting you. In multiplayer this also
 fights where the enemy's aggro is on another player. Environmental damage (falling,
 drowning, fire, traps) does not count as combat.
 
-Attack speed, movement, jumping, swimming, building and gathering are all affected while
-in combat you pay stamina exactly like in vanilla.
+Attack speed, movement, jumping, building and gathering are all free while you are out of
+combat, and you pay stamina exactly like in vanilla while in combat.
+
+**Swimming is never free**: stamina always drains while swimming, in or out of combat
+(running out of stamina while swimming is what drowns you).
 
 # Configuration
 

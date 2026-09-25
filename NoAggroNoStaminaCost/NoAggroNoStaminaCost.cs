@@ -25,7 +25,8 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             "While enabled, the local player's stamina no longer drains as long as they are not fighting. "
             + "You are considered to be fighting while an enemy targets you, while you are hitting a hostile "
             + "character, while a hostile character is hitting you, or while an alerted hostile is fighting "
-            + "another target within CombatRadius (multiplayer).");
+            + "another target within CombatRadius (multiplayer). "
+            + "Swimming always costs stamina, in or out of combat.");
 
         CombatGracePeriod = Config.Bind(
             "General", "CombatGracePeriod", 1f,
