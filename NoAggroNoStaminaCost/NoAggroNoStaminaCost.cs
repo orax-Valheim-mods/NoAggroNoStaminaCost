@@ -16,6 +16,7 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
     public static ConfigEntry<float> CombatGracePeriod;
     public static ConfigEntry<float> AttackGracePeriod;
     public static ConfigEntry<float> CombatRadius;
+    public static ConfigEntry<bool> LogsEnabled;
 
     private static ManualLogSource _log;
 
@@ -75,6 +76,16 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             )
         );
 
+        LogsEnabled = Config.Bind(
+            "General",
+            "LogsEnabled",
+            true,
+            "Whether the mod writes its own diagnostic lines (for example one line each time you "
+                + "hit a hostile, or the local combat state changes) to BepInEx\\LogOutput.log. "
+                + "Set to false to silence them. The plugin's startup line is always logged. "
+                + "Has no effect on gameplay."
+        );
+
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
 
@@ -88,10 +99,14 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
 
     /// <summary>
     /// Writes a line to the BepInEx log (BepInEx\LogOutput.log) through this plugin's log source,
-    /// prefixed with [Info:NoAggroNoStaminaCost]. Safe to call from any patch.
+    /// prefixed with [Info:NoAggroNoStaminaCost], unless LogsEnabled is set to false.
+    /// Safe to call from any patch.
     /// </summary>
     public static void Log(string message)
     {
+        if (LogsEnabled is not null && !LogsEnabled.Value)
+            return;
+
         _log?.LogInfo(message);
     }
 }
