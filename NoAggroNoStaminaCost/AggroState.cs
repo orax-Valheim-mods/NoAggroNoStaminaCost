@@ -4,30 +4,47 @@ using UnityEngine;
 namespace NoAggroNoStaminaCost;
 
 /// <summary>
-/// Holds the timestamps of the last combat events seen by the local player:
-/// aggro/damage received (CombatGracePeriod) and damage dealt (AttackGracePeriod).
+/// Holds the combat state of the local player: the timestamps of the last combat events
+/// (aggro/damage received = CombatGracePeriod, damage dealt = AttackGracePeriod) and the
+/// throttled scan for fights between an enemy and an ally nearby (CombatRadius).
 /// </summary>
 internal static class AggroState
 {
     private const float NearbyScanInterval = 0.25f;
+    private const float AggroLogRepeatInterval = 1f;
 
     private static float _lastAggroTime = float.NegativeInfinity;
     private static float _lastAttackTime = float.NegativeInfinity;
     private static float _lastNearbyScanTime = float.NegativeInfinity;
     private static bool _nearbyCombat;
+    private static string _lastAggroLogReason;
+    private static float _lastAggroLogTime = float.NegativeInfinity;
 
     /// <summary>
-    /// A hostile started targeting me, or hit me.
+    /// A hostile started targeting me, hit me, or a fight against an ally was detected nearby.
+    /// Always refreshes the CombatGracePeriod timestamp.
     /// </summary>
     /// <param name="reason">
     /// Optional detail written to the mod's log. Null keeps the call silent, which is what the
     /// nearby-combat scan uses: it refreshes the timestamp every NearbyScanInterval seconds and
-    /// would otherwise print a line 4 times per second.
+    /// would otherwise print a line 4 times per second. A reason repeating within
+    /// AggroLogRepeatInterval is logged only once, because the game re-sends "targeted" every
+    /// 0.5 s for as long as a hostile keeps its aggro on me.
     /// </param>
     public static void NotifyAggro(string reason = null)
     {
-        if (reason != null)
+        if (
+            reason != null
+            && (
+                reason != _lastAggroLogReason
+                || Time.time - _lastAggroLogTime >= AggroLogRepeatInterval
+            )
+        )
+        {
+            _lastAggroLogReason = reason;
+            _lastAggroLogTime = Time.time;
             NoAggroNoStaminaCost.Log($"NotifyAggro: {reason} (CombatGracePeriod refreshed).");
+        }
 
         _lastAggroTime = Time.time;
     }
@@ -54,14 +71,15 @@ internal static class AggroState
     }
 
     /// <summary>
-    /// True when an enemy of the local player is alerted and fighting an ally within
-    /// <paramref name="radius" /> meters: another player (multiplayer) or a tamed/summoned mob.
-    /// Fights between two wild mobs, or a mob chewing on a building, never count.
+    /// True when an enemy of the local player is alerted and fighting an ally, with at least one
+    /// of the two combatants within <paramref name="radius" /> meters of the local player:
+    /// the ally being another player (multiplayer) or a tamed/summoned mob. Fights between two
+    /// wild mobs, or a mob chewing on a building, never count.
     /// The target's ZDOID is never replicated, but "alerted" and "haveTarget" are: the peer that
     /// simulates the AI knows exactly what the enemy is fighting, other peers only know that it
     /// fights "something" and fall back to "an ally stands right next to the fight".
-    /// Result is cached for NearbyScanInterval seconds; when a fight is found the aggro
-    /// timestamp is refreshed so CombatGracePeriod applies afterwards.
+    /// Result is cached for NearbyScanInterval seconds; while a fight is found the aggro
+    /// timestamp is refreshed so CombatGracePeriod applies during the fight and right after it.
     /// </summary>
     public static bool IsCombatNearby(float radius)
     {
