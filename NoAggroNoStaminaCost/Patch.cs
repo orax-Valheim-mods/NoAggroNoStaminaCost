@@ -15,7 +15,7 @@ internal class Patch
             if (!alerted || __instance != Player.m_localPlayer)
                 return;
 
-            AggroState.NotifyAggro();
+            AggroState.NotifyAggro("a hostile started targeting the local player");
         }
     }
 
@@ -28,6 +28,9 @@ internal class Patch
     [HarmonyPatch(typeof(Player), nameof(Player.UseStamina))]
     internal static class Player_UseStamina_NoDrainOutOfCombat
     {
+        // Decision returned the last time the prefix ran: only transitions are logged.
+        private static bool _paidLastTime = true;
+
         private static bool Prefix(Player __instance)
         {
             if (!NoAggroNoStaminaCost.Enabled.Value)
@@ -39,24 +42,38 @@ internal class Patch
             if (__instance.IsSwimming())
                 // Swimming is never free: Player.OnSwimming -> UseStamina must pay
                 // (running out of stamina while swimming is what drowns you).
-                return true;
+                return Decide(true, "swimming always costs stamina");
 
             if (AggroState.IsRecent(NoAggroNoStaminaCost.CombatGracePeriod.Value))
-            {
-                return true; // Targeted or hit by an enemy (or still inside that grace period).
-            }
+                return Decide(true, "CombatGracePeriod: a hostile targets me or hit me");
 
             if (AggroState.IsAttackRecent(NoAggroNoStaminaCost.AttackGracePeriod.Value))
-            {
-                return true; // I hit a hostile recently (or still inside that grace period).
-            }
+                return Decide(true, "AttackGracePeriod: I hit a hostile recently");
 
             if (AggroState.IsCombatNearby(NoAggroNoStaminaCost.CombatRadius.Value))
+                return Decide(true, "an alerted hostile fights nearby");
+
+            return Decide(false, "no combat");
+        }
+
+        /// <summary>
+        /// Returns <paramref name="pay" /> (true = stamina is consumed, false = it is free) and
+        /// writes a log line only when the decision changed since the previous call, so the log
+        /// shows the mod toggling instead of one line per stamina drain attempt.
+        /// </summary>
+        private static bool Decide(bool pay, string reason)
+        {
+            if (pay != _paidLastTime)
             {
-                return true; // A hostile fights another target nearby (multiplayer aggro).
+                _paidLastTime = pay;
+                NoAggroNoStaminaCost.Log(
+                    pay
+                        ? $"UseStamina: stamina is limited again ({reason})."
+                        : "UseStamina: no combat, stamina is unlimited."
+                );
             }
 
-            return false; // No combat -> cancel consumption (unlimited stamina).
+            return pay;
         }
     }
 
@@ -86,7 +103,7 @@ internal class Patch
             // Hostile mobs count; friendly tames and passive Dvergr do not (BaseAI.IsEnemy).
             // Hitting another player (PvP) always counts.
             if (__instance is Player || BaseAI.IsEnemy(local, __instance))
-                AggroState.NotifyAttack(); // -> AttackGracePeriod
+                AggroState.NotifyAttack(__instance.m_name); // -> AttackGracePeriod
         }
     }
 
@@ -109,7 +126,7 @@ internal class Patch
                 return;
 
             if (attacker is Player || BaseAI.IsEnemy(__instance, attacker))
-                AggroState.NotifyAggro(); // -> CombatGracePeriod
+                AggroState.NotifyAggro($"damaged by {attacker.m_name}"); // -> CombatGracePeriod
         }
     }
 }

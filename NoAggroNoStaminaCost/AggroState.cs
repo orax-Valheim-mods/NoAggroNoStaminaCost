@@ -15,17 +15,28 @@ internal static class AggroState
     private static float _lastNearbyScanTime = float.NegativeInfinity;
     private static bool _nearbyCombat;
 
-    /// <summary>A hostile started targeting me, or hit me.</summary>
-    public static void NotifyAggro()
+    /// <summary>
+    /// A hostile started targeting me, or hit me.
+    /// </summary>
+    /// <param name="reason">
+    /// Optional detail written to the mod's log. Null keeps the call silent, which is what the
+    /// nearby-combat scan uses: it refreshes the timestamp every NearbyScanInterval seconds and
+    /// would otherwise print a line 4 times per second.
+    /// </param>
+    public static void NotifyAggro(string reason = null)
     {
+        if (reason != null)
+            NoAggroNoStaminaCost.Log($"NotifyAggro: {reason} (CombatGracePeriod refreshed).");
+
         _lastAggroTime = Time.time;
     }
 
     /// <summary>I hit a hostile character.</summary>
-    public static void NotifyAttack()
+    /// <param name="target">Name of the character I hit, logged for context.</param>
+    public static void NotifyAttack(string target = null)
     {
         NoAggroNoStaminaCost.Log(
-            "NotifyAttack: local player hit a hostile (AttackGracePeriod refreshed)."
+            $"NotifyAttack: local player hit {target ?? "a hostile"} (AttackGracePeriod refreshed)."
         );
 
         _lastAttackTime = Time.time;
@@ -57,7 +68,17 @@ internal static class AggroState
             return _nearbyCombat;
 
         _lastNearbyScanTime = Time.time;
-        _nearbyCombat = ScanForNearbyCombat(radius);
+        bool found = ScanForNearbyCombat(radius);
+        if (found != _nearbyCombat)
+        {
+            NoAggroNoStaminaCost.Log(
+                found
+                    ? $"IsCombatNearby: alerted hostile fighting within {radius:0.#}m (multiplayer)."
+                    : "IsCombatNearby: no alerted hostile fighting nearby anymore."
+            );
+        }
+
+        _nearbyCombat = found;
         if (_nearbyCombat)
             NotifyAggro(); // Keep paying during CombatGracePeriod after the fight moves away.
 

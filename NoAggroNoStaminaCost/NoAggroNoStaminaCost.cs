@@ -86,6 +86,14 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
                 + "Has no effect on gameplay."
         );
 
+        Log(
+            $"Config: Enabled={Enabled.Value}, "
+                + $"CombatGracePeriod={CombatGracePeriod.Value}s, "
+                + $"AttackGracePeriod={AttackGracePeriod.Value}s, "
+                + $"CombatRadius={CombatRadius.Value}m, "
+                + $"LogsEnabled={LogsEnabled.Value}."
+        );
+
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
 
