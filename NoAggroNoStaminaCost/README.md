@@ -3,9 +3,12 @@
 Provides unlimited stamina as long as you are not fighting.
 
 You count as fighting while an enemy is targeting you, while you are hitting a hostile
-character, or while a hostile character is hitting you. In multiplayer this also covers
-fights where the enemy's aggro is on another player. Environmental damage (falling,
-drowning, fire, traps) does not count as combat.
+character, or while a hostile character is hitting you. Hits the game itself ignores (a
+corpse, or another player with PVP disabled) do not count. In multiplayer this also covers
+fights where the enemy's aggro is on someone else: an alerted enemy fighting an ally
+(another player, or a tamed/summoned mob) within `CombatRadius` meters counts as combat.
+Fights between two wild mobs never count. Environmental damage (falling, drowning, fire,
+traps) does not count as combat.
 
 Attack speed, movement, jumping, building and gathering are all free while you are out of
 combat, and you pay stamina exactly like in vanilla while in combat.
@@ -18,10 +21,10 @@ combat, and you pay stamina exactly like in vanilla while in combat.
 | Setting | Default | Description |
 |---|---|---|
 | `Enabled` | `true` | Master switch. |
-| `CombatGracePeriod` | `1` | Seconds after an enemy targets you or hits you before stamina becomes unlimited again (range 1-30). |
+| `CombatGracePeriod` | `1` | Seconds after an enemy targets you or hits you, or a nearby ally fight is detected (`CombatRadius`), before stamina becomes unlimited again (range 1-30). |
 | `AttackGracePeriod` | `3` | Seconds after **you** hit a hostile character before stamina becomes unlimited again, even if the enemy's aggro is on another player. `0` disables it (range 0-30). |
-| `CombatRadius` | `15` | Meters in which an alerted hostile **fighting an ally** counts as combat for you. Allies are other players (multiplayer) and tamed/summoned mobs; fights between two wild mobs never count. `0` disables it (range 0-100). |
-| `LogsEnabled` | `true` | Writes the mod's diagnostic lines (one per hit on a hostile, etc.) to `BepInEx\LogOutput.log`. `false` silences them; the startup line is always logged. |
+| `CombatRadius` | `15` | Meters in which an alerted hostile **fighting an ally** counts as combat for you. Allies are other players (multiplayer) and tamed/summoned mobs; fights between two wild mobs never count. While such a fight is detected, `CombatGracePeriod` keeps being refreshed. `0` disables it (range 0-100). |
+| `LogsEnabled` | `true` | Writes the mod's diagnostic lines (one per hit on a hostile, combat state changes, etc.) to `BepInEx\LogOutput.log`. `false` silences them; the `... loaded.` line at startup is always logged. |
 
 # Installation
 

@@ -42,9 +42,10 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             "CombatGracePeriod",
             1f,
             new ConfigDescription(
-                "Delay (in seconds) after an enemy starts targeting you, or hits you, before stamina "
-                    + "becomes unlimited again. Prevents rapid flickering when a monster loses and quickly "
-                    + "regains aggro on you. Independent from AttackGracePeriod.",
+                "Delay (in seconds) after an enemy starts targeting you, hits you, or a nearby "
+                    + "fight against an ally is detected (see CombatRadius), before stamina "
+                    + "becomes unlimited again. Prevents rapid flickering when a monster loses "
+                    + "and quickly regains aggro on you. Independent from AttackGracePeriod.",
                 new AcceptableValueRange<float>(1f, 30f)
             )
         );
@@ -69,7 +70,8 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             new ConfigDescription(
                 "Radius (in meters) in which an alerted hostile fighting an ally counts as combat "
                     + "for you. Allies are other players (multiplayer) and tamed or summoned mobs; "
-                    + "fights between two wild mobs never count. Set to 0 to disable.",
+                    + "fights between two wild mobs never count. While such a fight is detected, "
+                    + "CombatGracePeriod keeps being refreshed. Set to 0 to disable.",
                 new AcceptableValueRange<float>(0f, 100f)
             )
         );
@@ -80,8 +82,8 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             true,
             "Whether the mod writes its own diagnostic lines (for example one line each time you "
                 + "hit a hostile, or the local combat state changes) to BepInEx\\LogOutput.log. "
-                + "Set to false to silence them. The plugin's startup line is always logged. "
-                + "Has no effect on gameplay."
+                + "Set to false to silence them. The plugin's \"... loaded.\" line at startup is "
+                + "always logged. Has no effect on gameplay."
         );
 
         Log(
