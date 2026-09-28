@@ -37,8 +37,9 @@ internal class Patch
                 return true; // Never touch other players (multiplayer).
 
             if (__instance.IsSwimming())
-                return true; // Swimming is never free: Player.OnSwimming -> UseStamina must pay
-                             // (running out of stamina while swimming is what drowns you).
+                // Swimming is never free: Player.OnSwimming -> UseStamina must pay
+                // (running out of stamina while swimming is what drowns you).
+                return true;
 
             if (AggroState.IsRecent(NoAggroNoStaminaCost.CombatGracePeriod.Value))
             {

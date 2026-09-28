@@ -33,4 +33,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion(NoAggroNoStaminaCost.NoAggroNoStaminaCost.PluginVersion)]
 [assembly: AssemblyFileVersion(NoAggroNoStaminaCost.NoAggroNoStaminaCost.PluginVersion)]
-
