@@ -39,9 +39,9 @@ internal class Patch
             if (__instance != Player.m_localPlayer)
                 return true; // Never touch other players (multiplayer).
 
+            // Swimming is never free: Player.OnSwimming -> UseStamina must pay, because running
+            // out of stamina while swimming is what drowns you.
             if (__instance.IsSwimming())
-                // Swimming is never free: Player.OnSwimming -> UseStamina must pay
-                // (running out of stamina while swimming is what drowns you).
                 return Decide(true, "swimming always costs stamina");
 
             if (AggroState.IsRecent(NoAggroNoStaminaCost.CombatGracePeriod.Value))
@@ -80,8 +80,10 @@ internal class Patch
     /// <summary>
     /// Records every hit the local player lands on a hostile character (melee, bow, magic, AoE).
     /// In multiplayer the mob's formal aggro is often on another player, but hitting it still
-    /// means we are fighting it. This runs on the attacking peer (Character.Damage forwards the
-    /// hit to the owner through RPC_Damage), so it works for host and client alike.
+    /// means we are fighting it. This runs on the attacking peer (Character.Damage only forwards
+    /// the hit to the owner through RPC_Damage, where the game's own checks live), so it works
+    /// for host and client alike; hits the game throws away (dead target, victim with PVP off)
+    /// are skipped below so they never count as combat.
     /// Trees, rocks and buildings use IDestructible implementations other than Character and
     /// therefore never reach this patch: gathering and building stay stamina free.
     /// </summary>
@@ -100,8 +102,14 @@ internal class Patch
             if (hit.GetAttacker() != local)
                 return; // Damage between other characters (or a hit we only replicated).
 
+            if (__instance.IsDead())
+                return; // Hitting a corpse: the RPC is sent but no fight is happening.
+
+            if (__instance is Player victim && !victim.IsPVPEnabled() && !hit.m_ignorePVP)
+                return; // Victim has PVP off: RPC_Damage blocks the hit, no damage lands.
+
             // Hostile mobs count; friendly tames and passive Dvergr do not (BaseAI.IsEnemy).
-            // Hitting another player (PvP) always counts.
+            // Hitting another player counts only when their PVP is enabled (see above).
             if (__instance is Player || BaseAI.IsEnemy(local, __instance))
                 AggroState.NotifyAttack(__instance.m_name); // -> AttackGracePeriod
         }
