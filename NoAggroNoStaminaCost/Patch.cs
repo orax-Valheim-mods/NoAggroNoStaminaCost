@@ -51,7 +51,7 @@ internal class Patch
                 return Decide(true, "AttackGracePeriod: I hit a hostile recently");
 
             if (AggroState.IsCombatNearby(NoAggroNoStaminaCost.CombatRadius.Value))
-                return Decide(true, "an alerted hostile fights nearby");
+                return Decide(true, "an alerted hostile fights an ally nearby");
 
             return Decide(false, "no combat");
         }

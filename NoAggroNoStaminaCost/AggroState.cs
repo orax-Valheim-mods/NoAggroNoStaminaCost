@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace NoAggroNoStaminaCost;
 
@@ -53,11 +54,14 @@ internal static class AggroState
     }
 
     /// <summary>
-    /// True when a hostile that is alerted and chasing a target (in multiplayer: another player
-    /// holding its aggro) stands within <paramref name="radius"/> meters of the local player.
-    /// The target's ZDOID is never replicated, but "alerted" and "haveTarget" are, so this works
-    /// for clients and hosts alike. Result is cached for NearbyScanInterval seconds; when a
-    /// combat is found the aggro timestamp is refreshed so CombatGracePeriod applies afterwards.
+    /// True when an enemy of the local player is alerted and fighting an ally within
+    /// <paramref name="radius" /> meters: another player (multiplayer) or a tamed/summoned mob.
+    /// Fights between two wild mobs, or a mob chewing on a building, never count.
+    /// The target's ZDOID is never replicated, but "alerted" and "haveTarget" are: the peer that
+    /// simulates the AI knows exactly what the enemy is fighting, other peers only know that it
+    /// fights "something" and fall back to "an ally stands right next to the fight".
+    /// Result is cached for NearbyScanInterval seconds; when a fight is found the aggro
+    /// timestamp is refreshed so CombatGracePeriod applies afterwards.
     /// </summary>
     public static bool IsCombatNearby(float radius)
     {
@@ -73,8 +77,8 @@ internal static class AggroState
         {
             NoAggroNoStaminaCost.Log(
                 found
-                    ? $"IsCombatNearby: alerted hostile fighting within {radius:0.#}m (multiplayer)."
-                    : "IsCombatNearby: no alerted hostile fighting nearby anymore."
+                    ? $"IsCombatNearby: alerted hostile fighting an ally within {radius:0.#}m (multiplayer)."
+                    : "IsCombatNearby: no alerted hostile fighting an ally nearby anymore."
             );
         }
 
@@ -93,20 +97,114 @@ internal static class AggroState
 
         Vector3 position = local.transform.position;
         float sqrRadius = radius * radius;
+        List<Character> allies = CollectAllies(local);
 
         foreach (BaseAI ai in BaseAI.GetAllInstances())
         {
             if (ai == null || !ai.IsAlerted() || !ai.HaveTarget())
                 continue; // Cheap checks first: most AI instances are idle.
 
-            Character ch = ai.GetComponent<Character>();
-            if (ch == null || ch.IsDead())
+            Character enemy = ai.GetComponent<Character>();
+            if (enemy == null || enemy.IsDead())
                 continue;
 
-            if (!BaseAI.IsEnemy(local, ch))
+            if (!BaseAI.IsEnemy(local, enemy))
                 continue; // Friendly tames / Dvergr / same-group characters don't count.
 
-            if ((ch.transform.position - position).sqrMagnitude <= sqrRadius)
+            bool enemyNear = (enemy.transform.position - position).sqrMagnitude <= sqrRadius;
+
+            Character target = ai.GetTargetCreature();
+            if (target != null && !target.IsDead())
+            {
+                // This peer simulates the AI, so we know what the enemy is fighting:
+                // only a fight against an ally counts, never enemy vs enemy.
+                if (!IsAllied(target))
+                    continue;
+
+                if (enemyNear || (target.transform.position - position).sqrMagnitude <= sqrRadius)
+                    return true;
+
+                continue;
+            }
+
+            // Target identity unknown (this peer does not simulate the AI: typically a client
+            // while the host owns the mob, or the AI is chasing a building). Count it only when
+            // an ally stands right next to the fight. The local player is deliberately not
+            // among those allies: aggro on us already arrives via RPC_OnTargeted / OnDamaged,
+            // so a wild-vs-wild fight next to us alone does not count.
+            if (enemyNear && IsAllyNextTo(allies, enemy.transform.position, radius))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// True for characters fighting on our side: the local player, any other player (their
+    /// Player object exists locally whenever they are in range), and allied mobs.
+    /// </summary>
+    private static bool IsAllied(Character character)
+    {
+        if (character == null || character.IsDead())
+            return false;
+
+        if (character is Player)
+            return true; // Me or another player.
+
+        return IsAlliedMob(character);
+    }
+
+    /// <summary>
+    /// True for mobs on the players' side: tamed pets (Character.IsTamed reads the replicated
+    /// "tamed" flag), creatures with the PlayerSpawned faction, and creatures commanded to
+    /// follow a player (replicated "follow" flag, set for summons). Wild and neutral mobs
+    /// (deer, Dvergr, enemy factions of each other, ...) are not allies.
+    /// </summary>
+    private static bool IsAlliedMob(Character character)
+    {
+        if (character.IsTamed() || character.GetFaction() == Character.Faction.PlayerSpawned)
+            return true;
+
+        ZDO zdo = character.GetComponent<ZNetView>()?.GetZDO();
+        return zdo != null && !string.IsNullOrEmpty(zdo.GetString(ZDOVars.s_follow));
+    }
+
+    /// <summary>
+    /// Characters that can take part in a nearby fight for the local player: other players and
+    /// allied mobs. The local player is excluded (see ScanForNearbyCombat).
+    /// </summary>
+    private static List<Character> CollectAllies(Player local)
+    {
+        List<Character> allies = new List<Character>();
+
+        foreach (Player player in Player.GetAllPlayers())
+        {
+            if (player != null && player != local && !player.IsDead())
+                allies.Add(player);
+        }
+
+        foreach (Character character in Character.GetAllCharacters())
+        {
+            if (
+                character != null
+                && character is not Player
+                && !character.IsDead()
+                && IsAlliedMob(character)
+            )
+                allies.Add(character);
+        }
+
+        return allies;
+    }
+
+    /// <summary>True when any of the allies stands within radius of the fight.</summary>
+    private static bool IsAllyNextTo(List<Character> allies, Vector3 fightPosition, float radius)
+    {
+        float sqrRadius = radius * radius;
+
+        foreach (Character ally in allies)
+        {
+            if ((ally.transform.position - fightPosition).sqrMagnitude <= sqrRadius)
                 return true;
         }
 

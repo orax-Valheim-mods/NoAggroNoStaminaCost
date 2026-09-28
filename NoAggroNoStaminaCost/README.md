@@ -20,7 +20,7 @@ combat, and you pay stamina exactly like in vanilla while in combat.
 | `Enabled` | `true` | Master switch. |
 | `CombatGracePeriod` | `1` | Seconds after an enemy targets you or hits you before stamina becomes unlimited again (range 1-30). |
 | `AttackGracePeriod` | `3` | Seconds after **you** hit a hostile character before stamina becomes unlimited again, even if the enemy's aggro is on another player. `0` disables it (range 0-30). |
-| `CombatRadius` | `15` | Meters in which an alerted hostile chasing a target (another player holding its aggro, in multiplayer) counts as combat for you. `0` disables it (range 0-100). |
+| `CombatRadius` | `15` | Meters in which an alerted hostile **fighting an ally** counts as combat for you. Allies are other players (multiplayer) and tamed/summoned mobs; fights between two wild mobs never count. `0` disables it (range 0-100). |
 | `LogsEnabled` | `true` | Writes the mod's diagnostic lines (one per hit on a hostile, etc.) to `BepInEx\LogOutput.log`. `false` silences them; the startup line is always logged. |
 
 # Installation

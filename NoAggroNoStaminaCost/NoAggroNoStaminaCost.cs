@@ -33,7 +33,7 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             "While enabled, the local player's stamina no longer drains as long as they are not fighting. "
                 + "You are considered to be fighting while an enemy targets you, while you are hitting a hostile "
                 + "character, while a hostile character is hitting you, or while an alerted hostile is fighting "
-                + "another target within CombatRadius (multiplayer). "
+                + "an ally (another player or a tamed/summoned mob) within CombatRadius (multiplayer). "
                 + "Swimming always costs stamina, in or out of combat."
         );
 
@@ -67,11 +67,9 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
             "CombatRadius",
             15f,
             new ConfigDescription(
-                "Radius (in meters) in which an alerted hostile that is chasing a target counts "
-                    + "as combat for you. In multiplayer this catches fights where another player "
-                    + "holds the enemy's aggro: the target identity is not replicated, but the "
-                    + "'alerted' and 'haveTarget' states are, so any alerted and targeting hostile "
-                    + "of yours inside this radius keeps stamina costs active. Set to 0 to disable.",
+                "Radius (in meters) in which an alerted hostile fighting an ally counts as combat "
+                    + "for you. Allies are other players (multiplayer) and tamed or summoned mobs; "
+                    + "fights between two wild mobs never count. Set to 0 to disable.",
                 new AcceptableValueRange<float>(0f, 100f)
             )
         );
