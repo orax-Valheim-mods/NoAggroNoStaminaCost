@@ -24,6 +24,10 @@ internal static class AggroState
     /// <summary>I hit a hostile character.</summary>
     public static void NotifyAttack()
     {
+        NoAggroNoStaminaCost.Log(
+            "NotifyAttack: local player hit a hostile (AttackGracePeriod refreshed)."
+        );
+
         _lastAttackTime = Time.time;
     }
 
