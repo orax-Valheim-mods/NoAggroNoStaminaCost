@@ -1,6 +1,15 @@
+<#
+.SYNOPSIS
+    Renames the JotunnModStub template solution to a custom mod name.
+.DESCRIPTION
+    One-time utility script used to scaffold a new mod from the JotunnModStub
+    template. It renames folders, files, solution references, project references,
+    and updates DoPrebuild.props and Environment.props accordingly.
+#>
+
 param([string]$cmdarg = "")
 
-#Contibuted by Kpro#3271
+# Contributed by Kpro#3271
 #uncomment to enable logging
 #Start-Transcript -OutputDirectory "C:\transcripts\"
 
