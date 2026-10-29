@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -10,7 +10,7 @@ public class NoAggroNoStaminaCost : BaseUnityPlugin
 {
     public const string PluginGuid = "orax.NoAggroNoStaminaCost";
     public const string PluginName = "NoAggroNoStaminaCost";
-    public const string PluginVersion = "0.1.0";
+    public const string PluginVersion = "0.2.0";
 
     public static ConfigEntry<bool> Enabled;
     public static ConfigEntry<float> CombatGracePeriod;
